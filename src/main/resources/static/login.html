@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Đăng nhập nhân viên</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f7f7f7;
+        }
+
+        body {
+            display: flex;
+            justify-content: center; /* căn giữa ngang */
+            align-items: center;     /* căn giữa dọc */
+        }
+
+        .box {
+            background: white;
+            width: 350px;
+            padding: 30px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 12px; /* khoảng cách đều giữa các phần tử */
+        }
+
+        h2 {
+            color: #333;
+            text-align: center;
+            margin: 0;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            font-size: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            font-size: 15px;
+            background: #1976d2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        #loginResult {
+            margin-top: 10px;
+            font-weight: bold;
+            color: green;
+            text-align: center;
+        }
+
+        .smalllink {
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        .smalllink a {
+            color: #1976d2;
+            text-decoration: none;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h2>Đăng nhập nhân viên</h2>
+
+    <input id="username" placeholder="Tên đăng nhập">
+    <input id="password" type="password" placeholder="Mật khẩu">
+
+    <button onclick="login()">Đăng nhập</button>
+
+    <p id="loginResult"></p>
+
+    <div class="smalllink">
+        <a href="register.html">Chưa có tài khoản? → Đăng ký</a>
+    </div>
+</div>
+
+<script>
+async function login() {
+    const params = new URLSearchParams();
+    params.append("username", document.getElementById("username").value);
+    params.append("password", document.getElementById("password").value);
+
+    try {
+        const res = await fetch("/api/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: params
+        });
+
+        const text = await res.text();
+        document.getElementById("loginResult").innerText = text;
+        document.getElementById("loginResult").style.color = res.ok ? "green" : "red";
+    } catch (err) {
+        document.getElementById("loginResult").innerText = "Lỗi kết nối server!";
+        document.getElementById("loginResult").style.color = "red";
+    }
+}
+</script>
+
+</body>
+</html>

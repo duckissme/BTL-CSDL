@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Đăng ký nhân viên</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f0f2f5;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .box {
+            background: white;
+            width: 360px;
+            padding: 25px 22px;
+            border-radius: 10px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        h2 {
+            color: #333;
+            text-align: center;
+            margin: 0 0 10px 0;
+            font-size: 22px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px 11px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            transition: all 0.2s ease;
+        }
+
+        input:focus, select:focus {
+            border-color: #1976d2;
+            box-shadow: 0 0 3px rgba(25,118,210,0.4);
+            outline: none;
+        }
+
+        button {
+            padding: 11px;
+            font-size: 15px;
+            background: #1976d2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background: #125a9e;
+        }
+
+        #result {
+            margin-top: 5px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        a {
+            font-size: 14px;
+            text-align: center;
+            color: #1976d2;
+            text-decoration: none;
+            margin-top: 10px;
+            display: block;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h2>Đăng ký nhân viên</h2>
+
+    <input id="username" placeholder="Username">
+    <input id="password" type="password" placeholder="Password">
+    <input id="full_name" placeholder="Họ tên">
+
+    <!-- Giới tính -->
+    <select id="gender">
+        <option value="">-- Chọn giới tính --</option>
+        <option value="Nam">Nam</option>
+        <option value="Nữ">Nữ</option>
+        <option value="Khác">Khác</option>
+    </select>
+
+    <!-- Ngày sinh -->
+    <input id="dob" type="date">
+
+    <!-- Chức vụ -->
+    <select id="position_name">
+        <option value="">-- Chọn chức vụ --</option>
+        <option value="Giám đốc">Giám đốc</option>
+        <option value="Quản lý">Quản lý</option>
+        <option value="Kế toán">Kế toán</option>
+        <option value="Quản lý nhân sự">Quản lý nhân sự</option>
+        <option value="Nhân viên">Nhân viên</option>
+    </select>
+
+    <input id="phone" placeholder="SĐT">
+    <input id="address" placeholder="Địa chỉ">
+    <input id="email" type="email" placeholder="Email">
+
+    <!-- Loại hợp đồng -->
+    <select id="contract_type">
+        <option value="">-- Chọn loại hợp đồng --</option>
+        <option value="Chính thức">Chính thức</option>
+        <option value="Thực tập">Thực tập</option>
+        <option value="Thử việc">Thử việc</option>
+    </select>
+
+    <button onclick="register()">Đăng ký</button>
+
+    <p id="result"></p>
+
+    <a href="login.html">← Quay về đăng nhập</a>
+</div>
+
+<script>
+async function register() {
+    const params = new URLSearchParams();
+
+    params.append("username", document.getElementById("username").value);
+    params.append("password", document.getElementById("password").value);
+    params.append("full_name", document.getElementById("full_name").value);
+    params.append("gender", document.getElementById("gender").value);
+    params.append("date_of_birth", document.getElementById("dob").value);
+    params.append("position_name", document.getElementById("position_name").value);
+    params.append("phone", document.getElementById("phone").value);
+    params.append("address", document.getElementById("address").value);
+    params.append("email", document.getElementById("email").value);
+    params.append("contract_type", document.getElementById("contract_type").value);
+
+    try {
+        const res = await fetch("/api/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: params
+        });
+
+        const text = await res.text();
+        document.getElementById("result").innerText = text;
+        document.getElementById("result").style.color = res.ok ? "green" : "red";
+
+    } catch (err) {
+        document.getElementById("result").innerText = "Lỗi kết nối server!";
+        document.getElementById("result").style.color = "red";
+    }
+}
+</script>
+
+</body>
+</html>
