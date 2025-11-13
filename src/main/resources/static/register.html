@@ -4,63 +4,65 @@
     <meta charset="UTF-8">
     <title>Đăng ký nhân viên</title>
     <style>
-        html, body {
-            height: 100%;
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f0f2f5;
-        }
-
         body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: #eef1f6;
+            margin: 0;
+            padding: 15px;
             display: flex;
             justify-content: center;
-            align-items: center;
         }
 
         .box {
+            width: 400px;
             background: white;
-            width: 360px;
-            padding: 25px 22px;
-            border-radius: 10px;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 13px;
         }
 
         h2 {
-            color: #333;
             text-align: center;
             margin: 0 0 10px 0;
-            font-size: 22px;
         }
 
         input, select {
             width: 100%;
-            padding: 10px 11px;
+            padding: 10px 12px;
             font-size: 14px;
-            border: 1px solid #ccc;
+            border: 1px solid #cfd6dd;
             border-radius: 6px;
             box-sizing: border-box;
-            transition: all 0.2s ease;
+            background: #fafbfc;
         }
 
         input:focus, select:focus {
             border-color: #1976d2;
-            box-shadow: 0 0 3px rgba(25,118,210,0.4);
             outline: none;
         }
 
+        /* Bỏ mũi tên tăng giảm của input[type=number] */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type=number] {
+            -moz-appearance: textfield; /* Firefox */
+        }
+
         button {
-            padding: 11px;
+            padding: 10px;
             font-size: 15px;
             background: #1976d2;
             color: white;
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            font-weight: bold;
-            transition: 0.2s;
         }
 
         button:hover {
@@ -68,48 +70,31 @@
         }
 
         #result {
+            text-align: center;
+            font-weight: 600;
+            min-height: 20px;
             margin-top: 5px;
-            font-weight: bold;
-            text-align: center;
-        }
-
-        a {
-            font-size: 14px;
-            text-align: center;
-            color: #1976d2;
-            text-decoration: none;
-            margin-top: 10px;
-            display: block;
-        }
-
-        a:hover {
-            text-decoration: underline;
         }
     </style>
 </head>
 <body>
-
 <div class="box">
     <h2>Đăng ký nhân viên</h2>
 
-    <input id="username" placeholder="Username">
-    <input id="password" type="password" placeholder="Password">
+    <input id="employee_id" type="text" maxlength="10" placeholder="Mã nhân viên">
     <input id="full_name" placeholder="Họ tên">
 
-    <!-- Giới tính -->
     <select id="gender">
-        <option value="">-- Chọn giới tính --</option>
+        <option value="">Chọn giới tính</option>
         <option value="Nam">Nam</option>
         <option value="Nữ">Nữ</option>
         <option value="Khác">Khác</option>
     </select>
 
-    <!-- Ngày sinh -->
     <input id="dob" type="date">
 
-    <!-- Chức vụ -->
     <select id="position_name">
-        <option value="">-- Chọn chức vụ --</option>
+        <option value="">Chọn chức vụ</option>
         <option value="Giám đốc">Giám đốc</option>
         <option value="Quản lý">Quản lý</option>
         <option value="Kế toán">Kế toán</option>
@@ -121,27 +106,27 @@
     <input id="address" placeholder="Địa chỉ">
     <input id="email" type="email" placeholder="Email">
 
-    <!-- Loại hợp đồng -->
-    <select id="contract_type">
-        <option value="">-- Chọn loại hợp đồng --</option>
+    <select id="employment_contract">
+        <option value="">Chọn loại hợp đồng</option>
         <option value="Chính thức">Chính thức</option>
         <option value="Thực tập">Thực tập</option>
         <option value="Thử việc">Thử việc</option>
     </select>
 
+    <input id="basic_salary" type="number" placeholder="Lương cơ bản" step="1000">
+
     <button onclick="register()">Đăng ký</button>
 
     <p id="result"></p>
-
-    <a href="login.html">← Quay về đăng nhập</a>
 </div>
 
 <script>
 async function register() {
     const params = new URLSearchParams();
 
-    params.append("username", document.getElementById("username").value);
-    params.append("password", document.getElementById("password").value);
+    const empId = document.getElementById("employee_id").value;
+    if(empId) params.append("employee_id", empId);
+
     params.append("full_name", document.getElementById("full_name").value);
     params.append("gender", document.getElementById("gender").value);
     params.append("date_of_birth", document.getElementById("dob").value);
@@ -149,7 +134,10 @@ async function register() {
     params.append("phone", document.getElementById("phone").value);
     params.append("address", document.getElementById("address").value);
     params.append("email", document.getElementById("email").value);
-    params.append("contract_type", document.getElementById("contract_type").value);
+    params.append("employment_contract", document.getElementById("employment_contract").value);
+
+    const salary = document.getElementById("basic_salary").value;
+    if(salary) params.append("basic_salary", salary);
 
     try {
         const res = await fetch("/api/register", {
@@ -159,15 +147,23 @@ async function register() {
         });
 
         const text = await res.text();
-        document.getElementById("result").innerText = text;
-        document.getElementById("result").style.color = res.ok ? "green" : "red";
+        const resultEl = document.getElementById("result");
+        resultEl.innerText = text;
+        resultEl.style.color = res.ok ? "green" : "red";
+
+        // Nếu đăng ký thành công → quay về employee.html
+        if (text.includes("Đăng ký nhân viên thành công")) {
+            setTimeout(() => {
+                window.location.href = "employee.html";
+            }, 1200);
+        }
 
     } catch (err) {
-        document.getElementById("result").innerText = "Lỗi kết nối server!";
-        document.getElementById("result").style.color = "red";
+        const resultEl = document.getElementById("result");
+        resultEl.innerText = "Lỗi kết nối server!";
+        resultEl.style.color = "red";
     }
 }
 </script>
-
 </body>
 </html>

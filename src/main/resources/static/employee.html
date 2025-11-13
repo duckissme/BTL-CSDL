@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý nhân viên</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="header">
+        <h1>@ Công ty ABC</h1>
+    </div>
+
+    <div class="container">
+
+        <div class="page-title">
+            DANH SÁCH QUẢN LÝ NHÂN VIÊN
+        </div>
+
+        <!-- ====================== TABS ====================== -->
+        <div class="tabs">
+            <div class="tab active" onclick="window.location.href='employee.html'">Quản lý nhân viên</div>
+            <div class="tab" onclick="window.location.href='timekeeping.html'">Quản lý chấm công</div>
+        </div>
+
+        <!-- ====================== EMPLOYEE TAB ====================== -->
+        <div id="employee" class="box">
+            <div class="flex">
+                <input type="text" id="searchEmployee" placeholder="Tìm kiếm theo họ tên">
+                <button onclick="loadEmployees()">Tìm kiếm</button>
+                <button onclick="goToRegister()">Thêm nhân viên</button>
+            </div>
+            <table id="employeeTable">
+                <thead>
+                    <tr>
+                        <th>Mã NV</th>
+                        <th>Họ tên</th>
+                        <th>Chức vụ</th>
+                        <th>Ngày sinh</th>
+                        <th>Giới tính</th>
+                        <th>Email</th>
+                        <th>SĐT</th>
+                        <th>Trạng thái</th>
+                        <th>Loại HĐ</th>
+                        <th>Lương cơ bản</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <script>
+        let positions = [];
+
+        async function loadPositions() {
+            const res = await fetch('/api/hr/positions');
+            positions = await res.json();
+        }
+
+        function goToRegister() {
+            window.location.href = "register.html";
+        }
+
+        async function loadEmployees() {
+            const search = document.getElementById("searchEmployee").value;
+            const res = await fetch('/api/hr/employees' + (search ? '?search=' + search : ''));
+            const data = await res.json();
+            const tbody = document.querySelector("#employeeTable tbody");
+            tbody.innerHTML = "";
+            data.forEach(emp => {
+                const tr = document.createElement("tr");
+                tr.setAttribute("data-id", emp.employee_id);
+                tr.innerHTML = `
+            <td>${emp.employee_id || ''}</td>              <!-- Sửa key đúng -->
+            <td>${emp.full_name}</td>
+            <td>${emp.position_name || ''}</td>
+            <td>${emp.date_of_birth || ''}</td>
+            <td>${emp.gender || ''}</td>
+            <td>${emp.email || ''}</td>
+            <td>${emp.phone || ''}</td>
+            <td>${emp.work_status || ''}</td>
+            <td>${emp.employment_contract || ''}</td>     <!-- Sửa key đúng -->
+            <td>${emp.basic_salary || ''}</td>
+            <td>
+                <div class="button-group">
+                    <button onclick="deleteEmployee('${emp.employee_id}')">Xóa</button>
+                    <button onclick="updateEmployee('${emp.employee_id}')">Cập nhật</button>
+                </div>
+            </td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function deleteEmployee(id) {
+            if (!confirm("Bạn có chắc chắn muốn xóa nhân viên?")) return;
+            const res = await fetch('/api/hr/employees/' + id, { method: 'DELETE' });
+            alert(await res.text());
+            loadEmployees();
+        }
+
+        function updateEmployee(id) {
+            const tr = document.querySelector(`#employeeTable tr[data-id='${id}']`);
+            const tds = tr.querySelectorAll("td");
+
+            // ❌ Không cho sửa MÃ NV (tds[0]) — giữ nguyên hiển thị
+
+            tds[1].innerHTML = `<input type="text" value="${tds[1].textContent}">`;
+            tds[2].innerHTML = `<select>${positions.map(p => `<option ${p.position_name === tds[2].textContent ? 'selected' : ''}>${p.position_name}</option>`).join('')}</select>`;
+            tds[3].innerHTML = `<input type="date" value="${tds[3].textContent}">`;
+            tds[4].innerHTML = `<select>
+        <option value="Nam" ${tds[4].textContent === "Nam" ? "selected" : ""}>Nam</option>
+        <option value="Nữ" ${tds[4].textContent === "Nữ" ? "selected" : ""}>Nữ</option>
+        <option value="Khác" ${tds[4].textContent === "Khác" ? "selected" : ""}>Khác</option>
+    </select>`;
+            tds[5].innerHTML = `<input type="email" value="${tds[5].textContent}">`;
+            tds[6].innerHTML = `<input type="text" value="${tds[6].textContent}">`;
+
+            // Trạng thái enum
+            tds[7].innerHTML = `
+    <select>
+        <option value="Đang làm việc" ${tds[7].textContent === "Đang làm việc" ? "selected" : ""}>Đang làm việc</option>
+        <option value="Đã nghỉ" ${tds[7].textContent === "Đã nghỉ" ? "selected" : ""}>Đã nghỉ</option>
+    </select>
+`;
+
+            // Loại hợp đồng enum
+            tds[8].innerHTML = `<select>
+        <option value="Chính thức" ${tds[8].textContent === "Chính thức" ? "selected" : ""}>Chính thức</option>
+        <option value="Thực tập" ${tds[8].textContent === "Thực tập" ? "selected" : ""}>Thực tập</option>
+        <option value="Thử việc" ${tds[8].textContent === "Thử việc" ? "selected" : ""}>Thử việc</option>
+    </select>`;
+
+            tds[9].innerHTML = `<input type="number" value="${tds[9].textContent}" min="0">`;
+            tds[10].innerHTML = `<div class="button-group">
+        <button onclick="saveEmployee('${id}')">Lưu</button>
+        <button onclick="cancelUpdate()">Hủy</button>
+    </div>`;
+        }
+
+        async function saveEmployee(id) {
+            const tr = document.querySelector(`#employeeTable tr[data-id="${id}"]`);
+            const tds = tr.querySelectorAll("td");
+            const params = new URLSearchParams();
+
+            params.append('fullName', tds[1].querySelector("input").value);
+            params.append('positionName', tds[2].querySelector("select").value);
+            params.append('dateOfBirth', tds[3].querySelector("input").value);
+            params.append('gender', tds[4].querySelector("select").value);
+            params.append('email', tds[5].querySelector("input").value);
+            params.append('phone', tds[6].querySelector("input").value);
+            params.append('workStatus', tds[7].querySelector("select").value);
+            params.append('employmentContract', tds[8].querySelector("select").value); // sửa key
+            params.append('basicSalary', tds[9].querySelector("input").value);
+
+            const res = await fetch(`/api/hr/employees/${id}?${params.toString()}`, { method: 'PUT' });
+            alert(await res.text());
+            loadEmployees();
+        }
+
+        function cancelUpdate() { loadEmployees(); }
+
+        loadPositions().then(loadEmployees);
+    </script>
+</body>
+
+</html>

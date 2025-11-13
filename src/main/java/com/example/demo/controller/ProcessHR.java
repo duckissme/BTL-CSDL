@@ -17,56 +17,55 @@ import com.example.demo.dao.EmployeeDAO;
 @RequestMapping("/api/hr")
 public class ProcessHR {
 
-    private final EmployeeDAO employeeDAO;
+    private final EmployeeDAO dao;
 
-    public ProcessHR(EmployeeDAO employeeDAO) {
-        this.employeeDAO = employeeDAO;
+    public ProcessHR(EmployeeDAO dao) {
+        this.dao = dao;
     }
 
-    // 1️⃣ Lấy danh sách nhân viên (có tìm kiếm)
+    // =============================
+    // Lấy tất cả nhân viên (có tìm kiếm)
+    // =============================
     @GetMapping("/employees")
-    public List<Map<String,Object>> getEmployees(@RequestParam(required = false) String search){
-        return employeeDAO.getAllEmployees(search);
+    public List<Map<String, Object>> getEmployees(@RequestParam(required = false) String search) {
+        return dao.getAllEmployees(search);
     }
 
-    // 2️⃣ Xóa nhân viên
+    // =============================
+    // Xóa nhân viên
+    // =============================
     @DeleteMapping("/employees/{id}")
-    public String deleteEmployee(@PathVariable("id") long employeeId){
-        int rows = employeeDAO.deleteEmployee(employeeId);
-        return rows > 0 ? "Đã xóa nhân viên với ID: " + employeeId 
-                         : "Không tìm thấy nhân viên với ID: " + employeeId;
+    public String deleteEmployee(@PathVariable("id") String id) {
+        int rows = dao.deleteEmployee(id);
+        return rows > 0 ? "Xóa thành công" : "Xóa thất bại";
     }
 
-    // 3️⃣ Cập nhật nhân viên bằng @RequestParam (THÊM contractType)
+    // =============================
+    // Cập nhật nhân viên (KHÔNG cập nhật mã nhân viên)
+    // =============================
     @PutMapping("/employees/{id}")
-    public String updateEmployee(@PathVariable("id") long employeeId,
-                                 @RequestParam String fullName,
-                                 @RequestParam String positionName,
-                                 @RequestParam String dateOfBirth,
-                                 @RequestParam String gender,
-                                 @RequestParam String email,
-                                 @RequestParam String phone,
-                                 @RequestParam String workStatus,
-                                 @RequestParam String contractType) {
-        try {
-            int rows = employeeDAO.updateEmployeeByPositionName(
-                employeeId, fullName, positionName,
-                dateOfBirth, gender, email, phone,
-                workStatus, contractType
-            );
+    public String updateEmployee(
+            @PathVariable("id") String id,
+            @RequestParam String fullName,
+            @RequestParam String positionName,
+            @RequestParam String dateOfBirth,
+            @RequestParam String gender,
+            @RequestParam String email,
+            @RequestParam String phone,
+            @RequestParam String workStatus,
+            @RequestParam String employmentContract,
+            @RequestParam Double basicSalary) {
 
-            return rows > 0 ? "Đã cập nhật nhân viên ID " + employeeId
-                             : "Không tìm thấy nhân viên ID " + employeeId;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "Lỗi server: " + e.getMessage();
-        }
+        dao.updateEmployee(id, fullName, positionName, dateOfBirth, gender, email,
+                phone, workStatus, employmentContract, basicSalary);
+        return "Cập nhật thành công";
     }
 
-    // 4️⃣ Lấy danh sách position
+    // =============================
+    // Lấy danh sách chức vụ
+    // =============================
     @GetMapping("/positions")
-    public List<Map<String,Object>> getPositions() {
-        return employeeDAO.getAllPositions();
+    public List<Map<String, Object>> getPositions() {
+        return dao.getAllPositions();
     }
 }

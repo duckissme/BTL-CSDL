@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Phiếu Lương Nhân Viên</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 20mm;
+    }
+
+    body {
+      font-family: "Times New Roman", Times, serif;
+      margin: 0;
+      background: #f4f6fa;
+      color: #333;
+    }
+
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto;
+      background: #fff;
+      padding: 20mm 25mm;
+      box-sizing: border-box;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+    }
+
+    .title {
+      text-align: center;
+      font-size: 16px;
+      font-weight: bold;
+      color: black;
+      line-height: 1.5;
+      margin-bottom: 5px;
+    }
+
+    .subtitle {
+      display: block;
+      font-size: 16px;
+      font-weight: bold;
+      color: black;
+      margin-bottom: 5px;
+    }
+
+    .payroll-title {
+      font-size: 25px;
+      font-weight: bold;
+      color: #004aad;
+      margin-bottom: 3px;
+      text-align: center;
+    }
+
+    .payroll-period {
+      font-size: 25px;
+      font-weight: bold;
+      color: #004aad;
+      margin-bottom: 3px;
+      text-align: center;
+    }
+
+    .section-title {
+      background: #004aad;
+      color: white;
+      padding: 8px 12px;
+      font-weight: bold;
+      margin-top: 10px;
+      margin-bottom: 15px;
+      border-radius: 6px;
+      font-size: 15px;
+      text-align: left;
+      width: 88%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .section-content {
+      width: 88%;
+      margin: 0 auto;
+    }
+
+    .info-section {
+      margin-bottom: 20px;
+    }
+
+    .info-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      column-gap: 50px;
+      row-gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .info-item {
+      font-size: 15px;
+      line-height: 1.7;
+      word-break: break-word;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    table th,
+    table td {
+      border: 1px solid #ddd;
+      padding: 7px 10px;
+      font-size: 14.5px;
+    }
+
+    table th {
+      background: #f0f4ff;
+      text-align: left;
+    }
+
+    table th:nth-child(1),
+    table td:nth-child(1) {
+      width: 57%;
+    }
+
+    table th:nth-child(2),
+    table td:nth-child(2) {
+      width: 43%;
+      text-align: right;
+    }
+
+    .total-row td {
+      font-weight: bold;
+      background: #e8f0ff;
+      color: #007700;
+      font-size: 16px;
+    }
+
+    .sign-section {
+      display: flex;
+      justify-content: space-around;
+      text-align: center;
+      margin-top: 30px;
+    }
+
+    .sign-box {
+      width: 35%;
+    }
+
+    .sign-box strong {
+      display: block;
+      font-size: 15px;
+      font-weight: bold;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+    }
+
+    .sign-box span {
+      display: block;
+      margin-top: 5px;
+      font-size: 14px;
+      color: #555;
+    }
+
+    footer {
+      text-align: center;
+      color: #aaa;
+      margin-top: 150px;
+      font-size: 13px;
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      footer,
+      #loading {
+        display: none;
+      }
+
+      .page {
+        margin: 0;
+        box-shadow: none;
+        padding: 15mm 20mm;
+      }
+    }
+
+    #loading {
+      text-align: center;
+      color: #666;
+      font-size: 16px;
+      margin-top: 60px;
+    }
+  </style>
+</head>
+
+<body>
+  <p id="loading">Đang tải dữ liệu lương...</p>
+
+  <div class="page" id="content" style="display:none;">
+    <div class="title">
+      CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM<br>
+      <span class="subtitle">Độc lập - Tự do - Hạnh phúc</span>
+      <div class="payroll-title">PHIẾU LƯƠNG NHÂN VIÊN</div>
+      <div class="payroll-period"><span id="payroll_month_year"></span></div>
+    </div>
+
+    <div class="section-title">THÔNG TIN NHÂN VIÊN</div>
+    <div class="section-content">
+      <div class="info-section">
+        <div class="info-row">
+          <div class="info-item"><strong>Họ và tên:</strong> <span id="full_name"></span></div>
+          <div class="info-item"><strong>Mã nhân viên:</strong> <span id="employee_id"></span></div>
+        </div>
+        <div class="info-row">
+          <div class="info-item"><strong>Ngày sinh:</strong> <span id="date_of_birth"></span></div>
+          <div class="info-item"><strong>Giới tính:</strong> <span id="gender"></span></div>
+        </div>
+        <div class="info-row">
+          <div class="info-item"><strong>Số điện thoại:</strong> <span id="phone"></span></div>
+          <div class="info-item"><strong>Email:</strong> <span id="email"></span></div>
+        </div>
+        <div class="info-row">
+          <div class="info-item"><strong>Loại hợp đồng:</strong> <span id="employment_contract"></span></div>
+          <div class="info-item"><strong>Phòng ban:</strong> <span id="department"></span></div>
+        </div>
+        <div class="info-row">
+          <div class="info-item"><strong>Chức vụ:</strong> <span id="position"></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">TÓM TẮT CHẤM CÔNG</div>
+    <div class="section-content">
+      <table>
+        <tr>
+          <th>Chỉ tiêu</th>
+          <th>Số lượng</th>
+        </tr>
+        <tr>
+          <td>Số ngày làm việc</td>
+          <td id="work_days"></td>
+        </tr>
+        <tr>
+          <td>Nghỉ phép</td>
+          <td id="leave_days"></td>
+        </tr>
+        <tr>
+          <td>Vắng mặt</td>
+          <td id="absent_days"></td>
+        </tr>
+        <tr>
+          <td>Giờ tăng ca</td>
+          <td id="total_overtime"></td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="section-title">CHI TIẾT LƯƠNG</div>
+    <div class="section-content">
+      <table>
+        <tr>
+          <th>Khoản mục</th>
+          <th>Số tiền (VNĐ)</th>
+        </tr>
+        <tr>
+          <td>Phụ cấp</td>
+          <td id="allowance"></td>
+        </tr>
+        <tr>
+          <td>Tổng lương trước khấu trừ</td>
+          <td id="gross_salary"></td>
+        </tr>
+        <tr>
+          <td>Khấu trừ thuế + bảo hiểm</td>
+          <td id="deduction"></td>
+        </tr>
+        <tr class="total-row">
+          <td><strong>Lương thực lĩnh</strong></td>
+          <td id="net_salary"></td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="sign-section">
+      <div class="sign-box">
+        <strong>NHÂN VIÊN</strong>
+        <span>(Ký, ghi rõ họ tên)</span>
+      </div>
+      <div class="sign-box">
+        <strong>GIÁM ĐỐC</strong>
+        <span>(Ký, ghi rõ họ tên)</span>
+      </div>
+    </div>
+
+    <footer>© Công ty ABC</footer>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const employeeId = params.get("employeeId");
+    const month = params.get("month");
+    const year = params.get("year");
+
+    const loadingEl = document.getElementById("loading");
+    const contentEl = document.getElementById("content");
+
+    const formatDate = (dateStr) => {
+      if (!dateStr) return "";
+      const d = new Date(dateStr);
+      if (isNaN(d)) return dateStr;
+      return d.toLocaleDateString("vi-VN");
+    };
+
+    const formatMoney = (num) => {
+      if (num == null || isNaN(num)) return "";
+      return Number(num).toLocaleString("vi-VN", { style: "currency", currency: "VND" });
+    };
+
+    fetch(`/api/payroll?employeeId=${employeeId}&month=${month}&year=${year}`)
+      .then(res => {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .then(payroll => {
+        loadingEl.style.display = "none";
+        contentEl.style.display = "block";
+
+        document.getElementById("employee_id").innerText = payroll.employee_id || "";
+        document.getElementById("full_name").innerText = payroll.full_name || "";
+        document.getElementById("gender").innerText = payroll.gender || "";
+        document.getElementById("date_of_birth").innerText = formatDate(payroll.date_of_birth);
+        document.getElementById("phone").innerText = payroll.phone || "";
+        document.getElementById("email").innerText = payroll.email || "";
+        document.getElementById("employment_contract").innerText = payroll.employment_contract || "";
+        document.getElementById("department").innerText = payroll.department || "";
+        document.getElementById("position").innerText = payroll.position || "";
+
+        document.getElementById("work_days").innerText = payroll.work_days ?? 0;
+        document.getElementById("leave_days").innerText = payroll.leave_days ?? 0;
+        document.getElementById("absent_days").innerText = payroll.absent_days ?? 0;
+        document.getElementById("total_overtime").innerText = payroll.total_overtime ?? 0;
+
+        document.getElementById("allowance").innerText = formatMoney(payroll.allowance);
+        document.getElementById("gross_salary").innerText = formatMoney(payroll.gross_salary);
+        document.getElementById("deduction").innerText = formatMoney(payroll.deduction);
+        document.getElementById("net_salary").innerText = formatMoney(payroll.net_salary);
+
+        // Hiển thị tháng và năm
+        document.getElementById("payroll_month_year").innerText = `${payroll.month ?? month}/${payroll.year ?? year}`;
+      })
+      .catch(err => {
+        console.error("Không thể tải dữ liệu lương:", err);
+        loadingEl.innerText = "❌ Không thể tải dữ liệu lương. Vui lòng kiểm tra lại!";
+        loadingEl.style.color = "red";
+      });
+  </script>
+</body>
+
+</html>

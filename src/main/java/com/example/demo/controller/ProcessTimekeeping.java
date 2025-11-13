@@ -37,7 +37,7 @@ public class ProcessTimekeeping {
      */
     @PostMapping("/update")
     public Map<String, Object> saveTimekeeping(
-            @RequestParam long employeeId,
+            @RequestParam String employeeId,
             @RequestParam String date,
             @RequestParam(required = false) String checkIn,
             @RequestParam(required = false) String checkOut,

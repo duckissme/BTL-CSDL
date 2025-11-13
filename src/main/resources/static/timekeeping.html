@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý chấm công</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="header">
+        <h1>@ Công ty ABC</h1>
+    </div>
+    <div class="container">
+        <div class="page-title">
+            DANH SÁCH CHẤM CÔNG
+        </div>
+        <div class="tabs">
+            <div class="tab" onclick="window.location.href='employee.html'">Quản lý nhân viên</div>
+            <div class="tab active" onclick="window.location.href='timekeeping.html'">Quản lý chấm công</div>
+        </div>
+
+        <div id="timekeeping" class="box">
+            <div class="flex">
+                <label>Chọn ngày:</label>
+                <input type="date" id="datePicker">
+                <button onclick="loadTimekeeping()">Xem</button>
+            </div>
+            <div class="flex">
+                <input type="text" id="searchTimekeeping" placeholder="Tìm kiếm theo họ tên">
+                <button onclick="loadTimekeeping()">Tìm kiếm</button>
+            </div>
+            <table id="timekeepingTable">
+                <thead>
+                    <tr>
+                        <th>Mã NV</th>
+                        <th>Họ tên</th>
+                        <th>Ngày</th>
+                        <th>Giờ vào làm</th>
+                        <th>Giờ tan làm</th>
+                        <th>Tăng ca</th>
+                        <th>Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function getCurrentTime() {
+            return new Date().toTimeString().split(" ")[0];
+        }
+
+        async function doCheckIn(empId, date, btn) {
+            const time = getCurrentTime();
+
+            // Gửi checkIn + cập nhật trạng thái trong cùng 1 request
+            await fetch(`/api/timekeeping/update?employeeId=${empId}&date=${date}&checkIn=${time}&workStatus=Đi làm`, {
+                method: 'POST'
+            });
+
+            // UI: ẩn nút check in + hiển thị giờ
+            const wrapper = btn.parentElement;
+            btn.style.display = 'none';
+            wrapper.insertAdjacentHTML('afterbegin', `<span>${time}</span>`);
+
+            // Bật nút Check Out
+            const row = btn.closest("tr");
+            const checkOutBtn = row.querySelector(".btn-checkout");
+            if (checkOutBtn) checkOutBtn.disabled = false;
+
+            // Set dropdown UI
+            const selectStatus = row.querySelector("select");
+            if (selectStatus) selectStatus.value = 'Đi làm';
+        }
+        
+        async function doCheckOut(empId, date, btn) {
+            const time = getCurrentTime();
+            await fetch(`/api/timekeeping/update?employeeId=${empId}&date=${date}&checkOut=${time}`, { method: 'POST' });
+            btn.parentElement.innerHTML = `<div class="check-wrapper">${time}</div>`;
+            await updateStatus(empId, date, 'Đi làm');
+        }
+
+        async function updateStatus(empId, date, status) {
+            await fetch(`/api/timekeeping/update?employeeId=${empId}&date=${date}&workStatus=${status}`, { method: 'POST' });
+        }
+
+        async function loadTimekeeping() {
+            const date = document.getElementById("datePicker").value;
+            const search = document.getElementById("searchTimekeeping").value;
+            if (!date) { alert("Chọn ngày trước!"); return; }
+
+            await fetch('/api/timekeeping/generate?date=' + date, { method: 'POST' });
+
+            let url = `/api/timekeeping?date=${date}`;
+            if (search) url += '&search=' + encodeURIComponent(search);
+            const res = await fetch(url);
+            const data = await res.json();
+
+            const tbody = document.querySelector("#timekeepingTable tbody");
+            tbody.innerHTML = "";
+
+            data.forEach(tk => {
+                const tr = document.createElement("tr");
+                const hasCheckIn = !!tk.check_in;
+                const displayStatus = hasCheckIn ? 'Đi làm' : tk.work_status;
+
+                tr.innerHTML = `
+                    <td>${tk.employee_id}</td>
+                    <td>${tk.full_name}</td>
+                    <td>${tk.date}</td>
+                    <td class="col-check">
+                        <div class="check-wrapper">
+                            ${tk.check_in ? `<span>${tk.check_in}</span>` : `
+                                <button class="btn-checkin" 
+                                    onclick="doCheckIn('${tk.employee_id}', '${tk.date}', this)">Check In</button>
+                            `}
+                        </div>
+                    </td>
+                    <td class="col-check">
+                      <div class="check-wrapper">
+                        ${tk.check_out
+                            ? `<span>${tk.check_out}</span>`
+                            : `<button class="btn-checkout" ${!tk.check_in ? 'disabled' : ''} 
+                                    onclick="doCheckOut('${tk.employee_id}', '${tk.date}', this)">Check Out</button>`
+                        }
+                    </div>
+                    </td>
+                    <td>${tk.overtime || 0}</td>
+                    <td>
+                        <select onchange="updateStatus('${tk.employee_id}', '${tk.date}', this.value)">
+                            ${['Đi làm', 'Nghỉ phép', 'Vắng mặt']
+                        .map(s => `<option value="${s}" ${s === displayStatus ? 'selected' : ''}>${s}</option>`).join('')}
+                        </select>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+
+</html>
