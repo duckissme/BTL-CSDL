@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Quản lý phòng ban của Giám đốc</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+    <style>
+        .title-header {
+            color: #1976d2;
+            font-weight: bold;
+        }
+
+        body {
+            background: #f6f7f8;
+            padding: 24px;
+        }
+
+        .summary-card {
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        }
+
+        .summary-card .summary-title {
+            font-size: 0.95rem;
+            color: #555;
+        }
+
+        .summary-card .summary-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #212529;
+        }
+
+        .summary-card .fw-bold {
+            font-size: 1.1rem;
+            letter-spacing: 0.5px;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px dashed #ddd;
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <h2 class="mb-4 title-header">Quản lý phòng ban của Giám đốc</h2>
+
+        <div class="row gx-4">
+            <!-- LEFT TABLE + CHART -->
+            <div class="col-lg-8">
+                <!-- Bảng báo cáo hiệu suất -->
+                <div class="card table-card mb-4">
+                    <div class="card-header fw-bold">Báo cáo hiệu suất theo phòng ban</div>
+                    <div class="card-body p-0">
+                        <table class="table mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Phòng ban</th>
+                                    <th>Số nhân viên</th>
+                                    <th>Tổng lương</th>
+                                    <th>Tổng OT</th>
+                                    <th>Đi muộn</th>
+                                    <th>Nghỉ phép</th>
+                                    <th>Vắng mặt</th>
+                                </tr>
+                            </thead>
+                            <tbody id="departmentBody">
+                                <tr>
+                                    <td colspan="7" class="text-center py-3">Đang tải...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Biểu đồ so sánh điểm -->
+                <div class="card mb-4">
+                    <div class="card-header fw-bold">Biểu đồ so sánh điểm phòng ban</div>
+                    <div class="card-body">
+                        <canvas id="scoreChart" height="120"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT SUMMARY + MONTH PICKER -->
+            <div class="col-lg-4 panel-right">
+                <!-- Chọn tháng -->
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <form onsubmit="return false;" class="d-flex flex-column gap-2">
+                            <label for="monthPicker" class="form-label fw-bold">Chọn tháng:</label>
+                            <input id="monthPicker" type="month" class="form-control" />
+                            <button class="btn btn-primary mt-2" type="button" onclick="loadDashboard()">Tải dữ
+                                liệu</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Summary tổng quan -->
+                <div class="card summary-card p-3 mb-3 text-center">
+                    <div class="fw-bold mb-2">Tổng quan tháng</div>
+                    <div class="d-flex flex-column gap-2">
+                        <div class="summary-item">
+                            <div class="summary-title">Tổng nhân viên</div>
+                            <div id="summaryTotalEmployees" class="summary-value">0</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-title">Tổng lương</div>
+                            <div id="summaryTotalPayroll" class="summary-value">0</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-title">Tổng OT</div>
+                            <div id="summaryTotalOT" class="summary-value">0.0</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-title">Đi làm</div>
+                            <div id="presentCount" class="summary-value">0</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-title">Nghỉ phép</div>
+                            <div id="leaveCount" class="summary-value">0</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-title">Vắng mặt</div>
+                            <div id="absentCount" class="summary-value">0</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-title">Đi muộn</div>
+                            <div id="lateCount" class="summary-value">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bootstrap JS -->
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+            <script>
+                const API_DASHBOARD = "/api/dashboard";
+                let scoreChart = null;
+
+                document.addEventListener("DOMContentLoaded", () => {
+                    const now = new Date();
+                    document.getElementById("monthPicker").value = now.toISOString().slice(0, 7);
+                    loadDashboard();
+                });
+
+                function loadDashboard() {
+                    const month = document.getElementById("monthPicker").value || "";
+                    const url = `${API_DASHBOARD}?month=${encodeURIComponent(month)}`;
+
+                    // Reset bảng
+                    document.getElementById("departmentBody").innerHTML = `<tr><td colspan="7" class="text-center py-3">Đang tải...</td></tr>`;
+                    if (scoreChart) scoreChart.destroy();
+
+                    fetch(url)
+                        .then(res => res.json())
+                        .then(data => {
+                            const departments = data.departments || [];
+                            renderDepartments(departments);
+                            renderSummary(data.summary || {});
+                            renderChart(departments);
+                        })
+                        .catch(err => {
+                            document.getElementById("departmentBody").innerHTML =
+                                `<tr><td colspan="7" class="text-center text-danger py-3">Lỗi tải dữ liệu!</td></tr>`;
+                            console.error("Không tải được dashboard:", err);
+                        });
+                }
+
+                function renderDepartments(list) {
+                    const tbody = document.getElementById("departmentBody");
+                    if (!list || list.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-3">Không có dữ liệu</td></tr>`;
+                        return;
+                    }
+                    tbody.innerHTML = list.map(d => `
+                <tr>
+                    <td>${d.department_name || d.department_id}</td>
+                    <td>${d.employee_count || 0}</td>
+                    <td>${formatMoney(d.totalPayroll)}</td>
+                    <td>${d.total_overtime || 0}</td>
+                    <td>${d.lateCount || 0}</td>
+                    <td>${d.total_leave || 0}</td>
+                    <td>${d.total_absent || 0}</td>
+                </tr>
+            `).join("");
+                }
+
+                function renderSummary(data) {
+                    document.getElementById("summaryTotalEmployees").innerText = data.totalEmployees || 0;
+                    document.getElementById("summaryTotalPayroll").innerText = formatMoney(data.totalPayroll);
+                    document.getElementById("summaryTotalOT").innerText = data.totalOvertime || 0;
+                    document.getElementById("presentCount").innerText = data.presentCount || 0;
+                    document.getElementById("leaveCount").innerText = data.leaveCount || 0;
+                    document.getElementById("absentCount").innerText = data.absentCount || 0;
+                    document.getElementById("lateCount").innerText = data.totalLate || 0;
+                }
+
+                function renderChart(list) {
+                    const labels = list.map(d => d.department_name || d.department_id);
+                    const currentScores = list.map(d => d.current_score || 0);
+                    const previousScores = list.map(d => d.previous_score || 0);
+                    const changePercents = list.map(d => d.changePercent != null ? d.changePercent : 0);
+
+                    const ctx = document.getElementById("scoreChart").getContext("2d");
+                    if (scoreChart) scoreChart.destroy();
+
+                    scoreChart = new Chart(ctx, {
+                        type: "bar",
+                        plugins: [ChartDataLabels],
+                        data: {
+                            labels,
+                            datasets: [
+                                {
+                                    label: "Điểm tháng này",
+                                    data: currentScores,
+                                    backgroundColor: "rgba(54, 162, 235, 0.7)",
+                                    datalabels: { align: "end", anchor: "end", formatter: v => v.toFixed(2) }
+                                },
+                                {
+                                    label: "Điểm tháng trước",
+                                    data: previousScores,
+                                    backgroundColor: "rgba(255, 159, 64, 0.7)",
+                                    datalabels: { align: "end", anchor: "end", formatter: v => v.toFixed(2) }
+                                },
+                                {
+                                    label: "Chênh lệch (%)",
+                                    data: changePercents,
+                                    backgroundColor: changePercents.map(v =>
+                                        v >= 0 ? "rgba(75, 192, 75, 0.7)" : "rgba(255, 99, 132, 0.7)"
+                                    ),
+                                    datalabels: { align: "end", anchor: "end", formatter: v => v.toFixed(2) + "%" }
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            layout: { padding: { top: 25 } },
+                            scales: { y: { beginAtZero: true, max: 100, grace: "15%", title: { display: true, text: "Giá trị" } } },
+                            plugins: {
+                                legend: { position: "bottom" },
+                                tooltip: {
+                                    callbacks: {
+                                        label: ctx => {
+                                            if (ctx.dataset.label === "Chênh lệch (%)") return "Chênh lệch: " + ctx.raw.toFixed(2) + "%";
+                                            return `${ctx.dataset.label}: ${ctx.raw.toFixed(2)}`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                function formatMoney(num) { return num != null ? Number(num).toLocaleString("vi-VN") : "0"; }
+            </script>
+</body>
+
+</html>
