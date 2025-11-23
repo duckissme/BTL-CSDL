@@ -18,7 +18,7 @@ public class DirectorDAO {
 
     /**
      * Lấy danh sách phòng ban với số liệu tháng hiện tại và tháng trước,
-     * và insert vào DepartmentMonthlyReport nếu chưa có
+     * và insert vào DepartmentMonthlyReport 
      */
     public List<Map<String, Object>> getDepartmentReport(int month, int year) {
         // 1. Lấy dữ liệu current month từ Timekeeping + Employee
@@ -95,38 +95,38 @@ public class DirectorDAO {
                 INSERT INTO DepartmentMonthlyReport
                 (report_id, department_id, month, year, total_payroll, avg_score, total_absent, total_leave, total_late, total_overtime)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE 
+                    total_payroll = VALUES(total_payroll),
+                    avg_score = VALUES(avg_score),
+                    total_absent = VALUES(total_absent),
+                    total_leave = VALUES(total_leave),
+                    total_late = VALUES(total_late),
+                    total_overtime = VALUES(total_overtime)
                 """;
-
-        String checkSql = "SELECT COUNT(*) FROM DepartmentMonthlyReport WHERE department_id=? AND month=? AND year=?";
-
         for (Map<String, Object> d : current) {
             String deptId = (String) d.get("department_id");
+            String reportId = String.format("REP-%04d%02d-%s", year, month, deptId);
 
-            Integer count = jdbc.queryForObject(checkSql, Integer.class, deptId, month, year);
-            if (count == null || count == 0) { // chỉ insert nếu chưa tồn tại
-                String reportId = String.format("REP-%04d%02d-%s", year, month, deptId);
+            double avgScore = d.get("current_score") != null ? ((Number) d.get("current_score")).doubleValue() : 0.0;
+            int totalAbsent = d.get("total_absent") != null ? ((Number) d.get("total_absent")).intValue() : 0;
+            int totalLeave = d.get("total_leave") != null ? ((Number) d.get("total_leave")).intValue() : 0;
+            int totalLate = d.get("total_late") != null ? ((Number) d.get("total_late")).intValue() : 0;
+            double totalOT = d.get("total_overtime") != null ? ((Number) d.get("total_overtime")).doubleValue() : 0.0;
+            double totalPayroll = d.get("totalPayroll") != null ? ((Number) d.get("totalPayroll")).doubleValue() : 0.0;
 
-                double avgScore = d.get("current_score") != null ? ((Number) d.get("current_score")).doubleValue() : 0.0;
-                int totalAbsent = d.get("total_absent") != null ? ((Number) d.get("total_absent")).intValue() : 0;
-                int totalLeave = d.get("total_leave") != null ? ((Number) d.get("total_leave")).intValue() : 0;
-                int totalLate = d.get("total_late") != null ? ((Number) d.get("total_late")).intValue() : 0;
-                double totalOT = d.get("total_overtime") != null ? ((Number) d.get("total_overtime")).doubleValue() : 0.0;
-
-                jdbc.update(insertSql,
-                        reportId,
-                        deptId,
-                        month,
-                        year,
-                        d.get("totalPayroll"),
-                        avgScore,
-                        totalAbsent,
-                        totalLeave,
-                        totalLate,
-                        totalOT
+            jdbc.update(insertSql,
+                    reportId,
+                    deptId,
+                    month,
+                    year,
+                    totalPayroll,
+                    avgScore,
+                    totalAbsent,
+                    totalLeave,
+                    totalLate,
+                    totalOT
                 );
-            }
         }
-
         // 6. Trả về luôn dữ liệu tính toán, không dùng DepartmentMonthlyReport cho dashboard
         return current;
     }
